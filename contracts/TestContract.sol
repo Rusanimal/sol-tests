@@ -20,17 +20,17 @@ interface ITestToken {
 contract TestContract is ITestToken {
     mapping(address account => uint256 balance) private _balances;
     address private _owner;
+    uint8 private immutable _decimal;
     string private _name;
     string private _symbol;
-    uint256 private _totalSupply;
-    uint8 private _decimal;
+    uint256 private immutable _totalSupply;
 
     constructor(
         uint256 totalSupply_,
         uint8 decimal_,
         string memory symbol_,
         string memory name_
-    ) {
+    ) payable {
         _symbol = symbol_;
         _name = name_;
         _totalSupply = totalSupply_;
@@ -47,7 +47,7 @@ contract TestContract is ITestToken {
         return _symbol;
     }
 
-    function decimal() public view returns (uint256) {
+    function decimal() public view returns (uint8) {
         return _decimal;
     }
 
@@ -64,28 +64,28 @@ contract TestContract is ITestToken {
             revert EtherLessThanRequired(msg.sender, msg.value, 0.00001 ether);
         }
 
-        if (_balances[address(0)] < amount) {
-            revert InsufficientBalance(
-                msg.sender,
-                _balances[address(0)],
-                amount
-            );
+        uint256 tokenBalance = _balances[address(0)];
+
+        if (tokenBalance < amount) {
+            revert InsufficientBalance(msg.sender, tokenBalance, amount);
         }
 
-        _balances[address(0)] -= amount;
-        _balances[msg.sender] += amount;
+        unchecked {
+            _balances[address(0)] = tokenBalance - amount;
+            _balances[msg.sender] += amount;
+        }
     }
 
     function transfer(address account, uint256 amount) external {
-        if (_balances[msg.sender] < amount) {
-            revert InsufficientBalance(
-                msg.sender,
-                _balances[msg.sender],
-                amount
-            );
+        uint256 balanceSender = _balances[msg.sender];
+
+        if (balanceSender < amount) {
+            revert InsufficientBalance(msg.sender, balanceSender, amount);
         }
 
-        _balances[msg.sender] -= amount;
-        _balances[account] += amount;
+        unchecked {
+            _balances[msg.sender] = balanceSender - amount;
+            _balances[account] += amount;
+        }
     }
 }
