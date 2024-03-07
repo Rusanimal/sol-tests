@@ -64,11 +64,11 @@ contract TestContract is ITestToken {
             revert EtherLessThanRequired(msg.sender, msg.value, 0.00001 ether);
         }
 
-        if (_balances[msg.sender] + amount > _totalSupply) {
-            revert BalanceWouldBeOverflow(
+        if (_balances[address(0)] < amount) {
+            revert InsufficientBalance(
                 msg.sender,
-                _balances[msg.sender] + amount,
-                _totalSupply
+                _balances[address(0)],
+                amount
             );
         }
 
